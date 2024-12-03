@@ -1,0 +1,14 @@
+Package: JuliaODE
+Title: Automated Julia Code Generation for Solving ODEs with Julia package 'OrdinaryDiffEq.jl' in R
+Version: 0.0.0.9000
+Authors@R: 
+    person(given = "Simon", family = "Beyer", 
+           role = c("aut", "cre"),
+           email = "simon.beyer@fdm.uni-freiburg.de")
+Description: What the package does (one paragraph).
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Imports: 
+    JuliaConnectoR
