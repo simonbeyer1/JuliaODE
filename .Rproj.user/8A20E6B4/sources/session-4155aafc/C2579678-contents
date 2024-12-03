@@ -1,4 +1,3 @@
-```markdown
 # JuliaODEmodel: Generating Julia Code for ODE Models from R
 
 `JuliaODEmodel` is an R package that automatically generates Julia code for solving ordinary differential equations (ODEs). It translates ODE models into Julia, solves them, and calculates sensitivities (Jacobian) if needed. It offers seamless integration with Julia through the `JuliaConnectoR` package.
