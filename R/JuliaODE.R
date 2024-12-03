@@ -1,11 +1,11 @@
 #' Generate Julia Code for ODE Models
 #'
 #' This function generates Julia code to solve ordinary differential equation (ODE) models
-#' \deqn{\frac{dx}{dt} = f(x, p)\,, \quad x(t = t_0) = x_0(p)\,,}
+#' \deqn{\displaystyle \frac{dx}{dt} = f(x, p)\,, \quad x(t = t_0) = x_0(p)\,,}
 #' along with supporting functions for integration and Jacobian computation. The function
 #' automatically translates an equation list into Julia syntax and writes the resulting code
 #' to a file. It also creates an interface for solving ODEs and computing the Jacobian
-#' \deqn{\frac{\partial x}{\partial p}}
+#' \deqn{\displaystyle \frac{\partial x}{\partial p}}
 #' from R using the JuliaConnectoR package.
 #'
 #' @param odefunction A named list where names are the dynamic variables and values are the corresponding ODEs written as strings.
@@ -25,44 +25,42 @@
 #'
 #' The returned object contains two methods:
 #' \itemize{
-#'   \item `$solve(x0, dynpars, times, solver = "AutoTsit5(Rosenbrock32())", atol = 1e-8, rtol = 1e-6)`: Solves the ODE system.
-#'   \item `$senssolve(x0, dynpars, times, solver = "AutoTsit5(Rosenbrock32())", atol = 1e-8, rtol = 1e-6)`: Solves the ODE system and computes sensitivities (Jacobian).
+#'   \item `$solve(x0, dynpars, times, solver = "AutoTsit5(Rosenbrock32())", atol = 1e-8, rtol = 1e-6, maxsteps = 1e5)`: Solves the ODE system.
+#'   \item `$senssolve(x0, dynpars, times, solver = "AutoTsit5(Rosenbrock32())", atol = 1e-8, rtol = 1e-6, maxsteps = 1e5))`: Solves the ODE system and computes sensitivities (Jacobian).
 #' }
 #'
 #' @examples
 #' \dontrun{
-#' # Define an example ODE system (A -> B -> 0) with rates k1 and k2, where A is time-dependent
+#' # Define ODE system
 #' odefunction <- list(
-#'   A = "-k1 * A * t",
-#'   B = "k1 * A - k2 * B"
+#'   Prey = "alpha * Prey - beta * Prey * Predator",
+#'   Predator = "delta * Prey * Predator - gamma * Predator"
 #' )
 #'
-#' # Define events with expressions in 'value'
+#' # Define events
 #' events <- data.frame(
-#'   var = c("A", "B"),
-#'   time = c(50, 70),
-#'   value = c("0.5 * A", "k2"),
-#'   method = c("add", "rep"),
-#'   stringsAsFactors = FALSE
+#'   var = c("Prey", "Predator"),
+#'   time = c(50, 100),
+#'   value = c("2 * Prey", "Predator / 2"),
+#'   method = c("add", "rep")
 #' )
 #'
 #' # Generate the Julia model
-#' odemodel <- juliaODEmodel(odefunction, modelname = "reaction_model", events = events)
+#' odemodel <- juliaODEmodel(odefunction, modelname = "LotkaVolterra", events = events)
 #'
 #' # Initial conditions and parameters
-#' x0 <- c(A = 1, B = 0)
-#' dynpars <- c(k1 = 0.1, k2 = 0.05)
-#' times <- seq(0, 100, by = 1)
+#' inits <- c(Prey = 40, Predator = 9)
+#' params <- c(alpha = 0.1, beta = 0.02, delta = 0.01, gamma = 0.1)
+#' times <- seq(0, 200, length.out = 500)
 #'
 #' # Solve the ODE system without sensitivities
-#' solution <- odemodel$solve(x0, dynpars, times)
+#' solution <- odemodel$solve(inits, params, times)
 #' print(head(solution))
 #'
 #' # Solve the ODE system with sensitivities
-#' solution_sens <- odemodel$senssolve(x0, dynpars, times)
+#' solution_sens <- odemodel$senssolve(inits, params, times)
 #' print(head(solution_sens))
 #' }
-#'
 #' @export
 juliaODEmodel <- function(odefunction, modelname = "odemodel", file = paste0(modelname, ".jl"), events = NULL) {
 
