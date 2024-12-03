@@ -1,4 +1,3 @@
-```markdown
 # JuliaODE: Interface for ODE Solvers and Automatic Generation of Julia Code from R
 
 The `JuliaODE` package provides an interface between R and Julia for solving ordinary differential equations (ODEs). It not only generates Julia code for ODE models but also creates a seamless integration with Julia’s powerful ODE solvers, allowing you to solve ODEs and perform sensitivity analysis directly from R. This package also supports event handling and Jacobian computation (sensitivity analysis).
@@ -126,6 +125,7 @@ solution_sens <- odemodel$senssolve(x0, dynpars, times)
 print(head(solution))
 print(head(solution_sens))
 
+
 # plotting
 out_sens <- melt(as.data.frame(solution_sens), id.vars = "time", variable.name = "name", value.name = "value")
 ggplot(out_sens, aes(x = time, y = value)) +
@@ -136,12 +136,6 @@ ggplot(out_sens, aes(x = time, y = value)) +
     y = "Derivative value"
   ) + theme_minimal()
 ```
-
-### Results
-
-Here is an example of the ODE solutions and sensitivities plotted:
-
-[![ODE Solutions and Sensitivities](figures/example_plot.pdf)](figures/example_plot.pdf)
 
 ### Events
 
