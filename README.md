@@ -125,7 +125,6 @@ solution_sens <- odemodel$senssolve(x0, dynpars, times)
 print(head(solution))
 print(head(solution_sens))
 
-
 # plotting
 out_sens <- melt(as.data.frame(solution_sens), id.vars = "time", variable.name = "name", value.name = "value")
 ggplot(out_sens, aes(x = time, y = value)) +
@@ -136,6 +135,7 @@ ggplot(out_sens, aes(x = time, y = value)) +
     y = "Derivative value"
   ) + theme_minimal()
 ```
+![](figures/example_plot.png)<!-- -->
 
 ### Events
 
