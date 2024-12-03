@@ -97,33 +97,38 @@ library(JuliaODE)
 library(ggplot2)
 library(reshape2)
 
-# Define an example ODE system (A -> B -> 0) with rates k1 and k2
+# Define Lotka Volterra ODE system
 odefunction <- list(
-  A = "-k1 * A",
-  B = "k1 * A - k2 * B"
+  Prey = "alpha * Prey - beta * Prey * Predator",
+  Predator = "delta * Prey * Predator - gamma * Predator"
 )
 
-# Define events with expressions in 'value'
+# Generate the Julia model
+odemodel <- juliaODEmodel(odefunction, modelname = "LotkaVolterra")
+
+# Initial conditions and parameters
+inits <- c(Prey = 40, Predator = 9)
+params <- c(alpha = 0.1, beta = 0.02, delta = 0.01, gamma = 0.1)
+times <- seq(0, 200, length.out = 500)
+
+# Define events 
 events <- data.frame(
-  var = c("A", "B"),
-  time = c(50, 70),
-  value = c("0.5 * A", "k2"),
+  var = c("Prey", "Predator"),
+  time = c(50, 100),
+  value = c("2 * Prey", "Predator / 2"),
   method = c("add", "rep")
 )
 
 # Generate the Julia model
-odemodel <- juliaODEmodel(odefunction, modelname = "toy_model", events = events)
+odemodel <- juliaODEmodel(odefunction, modelname = "LotkaVolterra", events = events)
 
-# Initial conditions and parameters
-x0 <- c(A = 1, B = 0)
-dynpars <- c(k1 = 0.2, k2 = 0.1)
-times <- seq(0, 100, by = 1)
 
-# Solve the ODE system without and with sensitivities
-solution <- odemodel$solve(x0, dynpars, times)
-solution_sens <- odemodel$senssolve(x0, dynpars, times)
-print(head(solution))
-print(head(solution_sens))
+# Solve the ODE system without sensitivities
+solution <- odemodel$solve(inits, params, times)
+head(solution)
+
+# Solve the ODE system with sensitivities
+solution_sens <- odemodel$senssolve(inits, params, times)
 
 # plotting
 out_sens <- melt(as.data.frame(solution_sens), id.vars = "time", variable.name = "name", value.name = "value")
@@ -135,7 +140,7 @@ ggplot(out_sens, aes(x = time, y = value)) +
     y = "Derivative value"
   ) + theme_minimal()
 ```
-![](figures/example_plot.png)<!-- -->
+![](figures/outLV.png)<!-- -->
 
 ### Events
 
