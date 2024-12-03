@@ -266,22 +266,22 @@ juliaODEmodel <- function(odefunction, modelname = "odemodel", file = paste0(mod
   ODEmodel <- list()
 
   # Function to solve ODEs without sensitivities
-  ODEmodel$solve <- function(x0, dynpars, times, solver = "AutoTsit5(Rosenbrock32())", atol = 1e-8, rtol = 1e-6) {
+  ODEmodel$solve <- function(x0, dynpars, times, solver = "AutoTsit5(Rosenbrock32())", atol = 1e-8, rtol = 1e-6, maxsteps = 1e5) {
     # Integrate in Julia
     out <- JuliaConnectoR::juliaLet(
-      paste0("solve_", modelname,"([x0;dynpars], times, ", solver, "; callback = cbs, tstops = tstop_events, abstol = atol, reltol = rtol)"),
-      x0 = x0, dynpars = dynpars, times = times, atol = atol, rtol = rtol
+      paste0("solve_", modelname,"([x0;dynpars], times, ", solver, "; callback = cbs, tstops = tstop_events, abstol = atol, reltol = rtol, maxiters = maxsteps)"),
+      x0 = x0, dynpars = dynpars, times = times, atol = atol, rtol = rtol, maxsteps = maxsteps
     )
     colnames(out) <- c("time", dynvars)
     return(out)
   }
 
   # Function to solve ODEs with sensitivities
-  ODEmodel$senssolve <- function(x0, dynpars, times, solver = "AutoTsit5(Rosenbrock32())", atol = 1e-8, rtol = 1e-6) {
+  ODEmodel$senssolve <- function(x0, dynpars, times, solver = "AutoTsit5(Rosenbrock32())", atol = 1e-8, rtol = 1e-6, maxsteps = 1e5) {
     # Calculate Jacobian in Julia
     out <- JuliaConnectoR::juliaLet(
-      paste0("solvesens_", modelname,"([x0;dynpars], times, ", solver, "; callback = cbs, tstops = tstop_events, abstol = atol, reltol = rtol)"),
-      x0 = x0, dynpars = dynpars, times = times, atol = atol, rtol = rtol
+      paste0("solvesens_", modelname,"([x0;dynpars], times, ", solver, "; callback = cbs, tstops = tstop_events, abstol = atol, reltol = rtol, maxiters = maxsteps)"),
+      x0 = x0, dynpars = dynpars, times = times, atol = atol, rtol = rtol, maxsteps = maxsteps
     )
 
     # Generate column names for the Jacobian
