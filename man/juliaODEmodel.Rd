@@ -33,8 +33,8 @@ An object with attributes:
 
 The returned object contains two methods:
 \itemize{
-\item \verb{$solve(x0, dynpars, times, solver = "AutoTsit5(Rosenbrock32())", atol = 1e-8, rtol = 1e-6, maxsteps = 1e5)}: Solves the ODE system.
-\item \verb{$senssolve(x0, dynpars, times, solver = "AutoTsit5(Rosenbrock32())", atol = 1e-8, rtol = 1e-6, maxsteps = 1e5))}: Solves the ODE system and computes sensitivities (Jacobian).
+\item \verb{$solve(inits, dynpars, times, solver = "AutoTsit5(Rosenbrock32())", atol = 1e-8, rtol = 1e-6, maxsteps = 1e5)}: Solves the ODE system.
+\item \verb{$senssolve(inits, dynpars, times, solver = "AutoTsit5(Rosenbrock32())", atol = 1e-8, rtol = 1e-6, maxsteps = 1e5)}: Solves the ODE system and computes sensitivities (Jacobian).
 }
 }
 \description{

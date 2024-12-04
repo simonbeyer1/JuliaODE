@@ -86,8 +86,8 @@ The `juliaODEmodel` function returns an object with the following attributes:
 
 The returned object contains two methods:
 
-- `solve(x0, dynpars, times, solver = "AutoTsit5(Rosenbrock32())", atol = 1e-8, rtol = 1e-6)`: Solves the ODE system.
-- `senssolve(x0, dynpars, times, solver = "AutoTsit5(Rosenbrock32())", atol = 1e-8, rtol = 1e-6)`: Solves the ODE system and computes sensitivities (Jacobian).
+- `solve(inits, dynpars, times, solver = "AutoTsit5(Rosenbrock32())", atol = 1e-8, rtol = 1e-6, maxsteps = 1e5)`: Solves the ODE system.
+- `senssolve(inits, dynpars, times, solver = "AutoTsit5(Rosenbrock32())", atol = 1e-8, rtol = 1e-6, maxsteps = 1e5)`: Solves the ODE system and computes sensitivities (Jacobian).
 
 ### Example
 

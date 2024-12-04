@@ -25,8 +25,8 @@
 #'
 #' The returned object contains two methods:
 #' \itemize{
-#'   \item `$solve(x0, dynpars, times, solver = "AutoTsit5(Rosenbrock32())", atol = 1e-8, rtol = 1e-6, maxsteps = 1e5)`: Solves the ODE system.
-#'   \item `$senssolve(x0, dynpars, times, solver = "AutoTsit5(Rosenbrock32())", atol = 1e-8, rtol = 1e-6, maxsteps = 1e5))`: Solves the ODE system and computes sensitivities (Jacobian).
+#'   \item `$solve(inits, dynpars, times, solver = "AutoTsit5(Rosenbrock32())", atol = 1e-8, rtol = 1e-6, maxsteps = 1e5)`: Solves the ODE system.
+#'   \item `$senssolve(inits, dynpars, times, solver = "AutoTsit5(Rosenbrock32())", atol = 1e-8, rtol = 1e-6, maxsteps = 1e5)`: Solves the ODE system and computes sensitivities (Jacobian).
 #' }
 #'
 #' @examples
@@ -264,22 +264,32 @@ juliaODEmodel <- function(odefunction, modelname = "odemodel", file = paste0(mod
   ODEmodel <- list()
 
   # Function to solve ODEs without sensitivities
-  ODEmodel$solve <- function(x0, dynpars, times, solver = "AutoTsit5(Rosenbrock32())", atol = 1e-8, rtol = 1e-6, maxsteps = 1e5) {
+  ODEmodel$solve <- function(inits, dynpars, times, solver = "AutoTsit5(Rosenbrock32())", atol = 1e-8, rtol = 1e-6, maxsteps = 1e5) {
+
+    # Ensure that x0 and dynpars are in the correct order
+    inits <- inits[dynvars]
+    dynpars <- dynpars[parameters]
+
     # Integrate in Julia
     out <- JuliaConnectoR::juliaLet(
-      paste0("solve_", modelname,"([x0;dynpars], times, ", solver, "; callback = cbs, tstops = tstop_events, abstol = atol, reltol = rtol, maxiters = maxsteps)"),
-      x0 = x0, dynpars = dynpars, times = times, atol = atol, rtol = rtol, maxsteps = maxsteps
+      paste0("solve_", modelname,"([inits;dynpars], times, ", solver, "; callback = cbs, tstops = tstop_events, abstol = atol, reltol = rtol, maxiters = maxsteps)"),
+      inits = inits, dynpars = dynpars, times = times, atol = atol, rtol = rtol, maxsteps = maxsteps
     )
     colnames(out) <- c("time", dynvars)
     return(out)
   }
 
   # Function to solve ODEs with sensitivities
-  ODEmodel$senssolve <- function(x0, dynpars, times, solver = "AutoTsit5(Rosenbrock32())", atol = 1e-8, rtol = 1e-6, maxsteps = 1e5) {
-    # Calculate Jacobian in Julia
+  ODEmodel$senssolve <- function(inits, dynpars, times, solver = "AutoTsit5(Rosenbrock32())", atol = 1e-8, rtol = 1e-6, maxsteps = 1e5) {
+
+    # Ensure that x0 and dynpars are in the correct order
+    inits <- inits[dynvars]
+    dynpars <- dynpars[parameters]
+
+    # Integration and Jacobian calculation in Julia
     out <- JuliaConnectoR::juliaLet(
-      paste0("solvesens_", modelname,"([x0;dynpars], times, ", solver, "; callback = cbs, tstops = tstop_events, abstol = atol, reltol = rtol, maxiters = maxsteps)"),
-      x0 = x0, dynpars = dynpars, times = times, atol = atol, rtol = rtol, maxsteps = maxsteps
+      paste0("solvesens_", modelname,"([inits;dynpars], times, ", solver, "; callback = cbs, tstops = tstop_events, abstol = atol, reltol = rtol, maxiters = maxsteps)"),
+      inits = inits, dynpars = dynpars, times = times, atol = atol, rtol = rtol, maxsteps = maxsteps
     )
 
     # Generate column names for the Jacobian
@@ -342,12 +352,8 @@ ensureJuliaPackages <- function() {
     if (!(pkg %in% installed_packages)) {
       packageStartupMessage(sprintf("Installing missing Julia package: %s", pkg))
       JuliaConnectoR::juliaCall("Pkg.add", pkg)
-    } else {
-      packageStartupMessage(sprintf("Julia package %s is already installed.", pkg))
     }
   }
-
-  packageStartupMessage("All required Julia packages are now installed.")
 }
 
 .onAttach <- function(libname, pkgname) {
