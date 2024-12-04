@@ -339,7 +339,7 @@ ensureJuliaPackages <- function() {
 
   # Fetch the list of installed packages and extract names
   installed_packages <- JuliaConnectoR::juliaEval("
-    [info.name for (uuid, info) in Pkg.dependencies()]
+    [info.name for (uuid, info) in Pkg.installed()]
   ")
 
   # Check and install missing packages
