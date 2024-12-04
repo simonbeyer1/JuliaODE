@@ -103,14 +103,6 @@ odefunction <- list(
   Predator = "delta * Prey * Predator - gamma * Predator"
 )
 
-# Generate the Julia model
-odemodel <- juliaODEmodel(odefunction, modelname = "LotkaVolterra")
-
-# Initial conditions and parameters
-inits <- c(Prey = 40, Predator = 9)
-params <- c(alpha = 0.1, beta = 0.02, delta = 0.01, gamma = 0.1)
-times <- seq(0, 200, length.out = 500)
-
 # Define events 
 events <- data.frame(
   var = c("Prey", "Predator"),
@@ -121,6 +113,11 @@ events <- data.frame(
 
 # Generate the Julia model
 odemodel <- juliaODEmodel(odefunction, modelname = "LotkaVolterra", events = events)
+
+# Initial conditions and parameters
+inits <- c(Prey = 40, Predator = 9)
+params <- c(alpha = 0.1, beta = 0.02, delta = 0.01, gamma = 0.1)
+times <- seq(0, 200, length.out = 500)
 
 
 # Solve the ODE system without sensitivities
