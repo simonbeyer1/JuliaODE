@@ -64,24 +64,24 @@
 #' @export
 juliaODEmodel <- function(odefunction, modelname = "odemodel", file = paste0(modelname, ".jl"), events = NULL) {
 
-  # ================================
+  # ================================================================
   # 1. Define Reserved Symbols
-  # ================================
+  # ================================================================
   # 't' and 'time' are treated as time variables and not as parameters
   reserved_symbols <- c("t", "time")
 
-  # ================================
+  # ================================================================
   # 2. Extract Dynamic Variables and Symbols from ODEs
-  # ================================
+  # ================================================================
   dynvars <- names(odefunction)
   symbols_ode <- unique(unlist(lapply(odefunction, function(expr) {
     parsed_expr <- parse(text = expr)
     all.vars(parsed_expr)
   })))
 
-  # ================================
+  # ================================================================
   # 3. Extract Symbols from Events' Value Expressions
-  # ================================
+  # ================================================================
   if (!is.null(events)) {
     symbols_events <- unique(unlist(lapply(events$value, function(expr) {
       parsed_expr <- parse(text = expr)
@@ -91,9 +91,9 @@ juliaODEmodel <- function(odefunction, modelname = "odemodel", file = paste0(mod
     symbols_events <- character(0)
   }
 
-  # ================================
+  # ================================================================
   # 4. Determine All Parameters
-  # ================================
+  # ================================================================
   # Parameters are symbols that are neither dynamic variables nor reserved symbols
   all_symbols <- union(symbols_ode, symbols_events)
   parameters <- setdiff(all_symbols, c(dynvars, reserved_symbols))
@@ -102,9 +102,9 @@ juliaODEmodel <- function(odefunction, modelname = "odemodel", file = paste0(mod
   dynvars_indices <- stats::setNames(seq_along(dynvars), dynvars)
   parameter_indices <- stats::setNames(seq_along(parameters), parameters)
 
-  # ================================
+  # ================================================================
   # 5. Helper Function to Replace Symbols in Expressions
-  # ================================
+  # ================================================================
   replace_symbols <- function(expr) {
     # Replace dynamic variables with u[index]
     for (x in dynvars) {
@@ -119,9 +119,9 @@ juliaODEmodel <- function(odefunction, modelname = "odemodel", file = paste0(mod
     return(expr)
   }
 
-  # ================================
+  # ================================================================
   # 6. Generate Julia Code for ODE Equations
-  # ================================
+  # ================================================================
   eqncode <- lapply(odefunction, replace_symbols)
 
   # Combine the equations into the Julia ODE function
@@ -132,9 +132,9 @@ juliaODEmodel <- function(odefunction, modelname = "odemodel", file = paste0(mod
     "\nend \n\n"
   )
 
-  # ================================
+  # ================================================================
   # 7. Generate Julia Code for Events (if provided)
-  # ================================
+  # ================================================================
   if (!is.null(events)){
     # Check for required columns in events
     if (!all(c("var", "time", "value", "method") %in% colnames(events))) {
@@ -157,9 +157,9 @@ juliaODEmodel <- function(odefunction, modelname = "odemodel", file = paste0(mod
       condition_code <- paste0(condition_code,
                                "condition_", as.character(row), "(u, t, integrator) = integrator.t == ", as.character(time), "\n")
 
-      # ================================
+      # ================================================================
       # 5.a. Replace Symbols in Event Value Expressions
-      # ================================
+      # ================================================================
       # Start with the original value expression
       value_replaced <- value_expr
 
@@ -176,9 +176,9 @@ juliaODEmodel <- function(odefunction, modelname = "odemodel", file = paste0(mod
       # Replace 'time' and 't' with integrator.t
       value_replaced <- gsub("\\b(time|t)\\b", "integrator.t", value_replaced)
 
-      # ================================
+      # ================================================================
       # 5.b. Map the Method to the Corresponding Julia Operation
-      # ================================
+      # ================================================================
       operation_code <- switch(
         method,
         add = paste0("integrator.u[", dynvars_indices[var], "] += ", value_replaced),
@@ -218,9 +218,9 @@ juliaODEmodel <- function(odefunction, modelname = "odemodel", file = paste0(mod
   }
 
 
-  # ================================
+  # ================================================================
   # 8. Combine All Julia Code
-  # ================================
+  # ================================================================
   julia_code <- paste0(
     "## Autogenerated Julia Code by JuliaODEmodel --- \n\n",
     "# Loading necessary Julia packages \n",
@@ -249,18 +249,15 @@ juliaODEmodel <- function(odefunction, modelname = "odemodel", file = paste0(mod
     "end \n\n"
   )
 
-  # ================================
+  # ================================================================
   # 9. Save and Execute Julia Code
-  # ================================
-  # Save the generated Julia code to the specified file
+  # ================================================================
   writeLines(julia_code, file)
-
-  # Execute the Julia code in the Julia session
   JuliaConnectoR::juliaEval(julia_code)
 
-  # ================================
+  # ================================================================
   # 10. Define the ODEmodel Object with Solution Methods
-  # ================================
+  # ================================================================
   ODEmodel <- list()
 
   # Function to solve ODEs without sensitivities
@@ -299,9 +296,9 @@ juliaODEmodel <- function(odefunction, modelname = "odemodel", file = paste0(mod
     return(out)
   }
 
-  # ================================
-  # 11. Add Attributes to the ODEmodel Object
-  # ================================
+  # ================================================================
+  # 11. Return the ODEmodel Object
+  # ================================================================
   attr(ODEmodel, "equations") <- odefunction
   attr(ODEmodel, "variables") <- dynvars
   attr(ODEmodel, "parameters") <- parameters
@@ -309,9 +306,7 @@ juliaODEmodel <- function(odefunction, modelname = "odemodel", file = paste0(mod
   attr(ODEmodel, "modelname") <- modelname
   attr(ODEmodel, "juliacode") <- julia_code
 
-  # ================================
-  # 12. Return the ODEmodel Object
-  # ================================
+
   return(ODEmodel)
 }
 
