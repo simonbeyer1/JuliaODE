@@ -42,7 +42,7 @@
 #'   var = c("Prey", "Predator"),
 #'   time = c(50, 100),
 #'   value = c("2 * Prey", "Predator / 2"),
-#'   method = c("add", "rep")
+#'   method = c("add", "replace")
 #' )
 #'
 #' # Generate the Julia model
