@@ -39,12 +39,12 @@ The returned object contains two methods:
 }
 \description{
 This function generates Julia code to solve ordinary differential equation (ODE) models
-\deqn{\displaystyle \frac{dx}{dt} = f(x, p)\,, \quad x(t = t_0) = x_0(p)\,,}
+\deqn{\displaystyle \dot{x} = f(x, p)\,, \quad x(t = t_0) = x_0(p)\,,}
 along with supporting functions for integration and Jacobian computation. The function
 automatically translates an equation list into Julia syntax and writes the resulting code
 to a file. It also creates an interface for solving ODEs and computing the Jacobian
-\deqn{\displaystyle \frac{\partial x}{\partial p}}
-from R using the JuliaConnectoR package.
+$ \partial x(t,p) /\partial p $
+from R using the JuliaCall package.
 }
 \examples{
 \dontrun{

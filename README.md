@@ -38,7 +38,7 @@ Ensure that the following software is installed:
 
 - **R**: Version 4.0.0 or higher
 - **Julia**: [Download from the official Julia website](https://julialang.org/downloads/) (Version 1.6 or higher)
-- **R Package**: `JuliaConnectoR` to facilitate communication between R and Julia.
+- **R Package**: `JuliaCall` to facilitate communication between R and Julia.
 
 ### Package Installation
 
@@ -108,7 +108,7 @@ events <- data.frame(
   var = c("Prey", "Predator"),
   time = c(50, 100),
   value = c("2 * Prey", "Predator / 2"),
-  method = c("add", "rep")
+  method = c("add", "replace")
 )
 
 # Generate the Julia model
@@ -146,12 +146,12 @@ If you have events in your model, you can define them using the `events` DataFra
 - **`var`**: The affected variable.
 - **`time`**: The time at which the event should be triggered.
 - **`value`**: The value to assign to the variable.
-- **`method`**: The event method: `"add"`, `"mult"`, or `"rep"` (replace).
+- **`method`**: The event method: `"add"`, `"mult"`, or `"replace"` (replace).
 
 #### Supported Event Methods:
 - **`add`**: Adds the value to the variable.
 - **`mult`**: Multiplies the variable by the value.
-- **`rep`**: Replaces the variable with the value.
+- **`replace`**: Replaces the variable with the value.
 
 The package supports adding, multiplying, or replacing variable values at specific times.
 
@@ -160,11 +160,13 @@ The package supports adding, multiplying, or replacing variable values at specif
 ## Notes
 
 - **Julia Dependencies**: When you load the package, it automatically checks if the required Julia packages (`OrdinaryDiffEq`, `ForwardDiff`) are installed. If not, they will be installed automatically.
-- **`JuliaConnectoR`**: This library enables communication between R and Julia. Ensure it is installed and properly set up.
+- **`JuliaCall`**: This library enables communication between R and Julia. Ensure it is installed and properly set up.
 
 ```r
-# To install JuliaConnectoR:
+# To install JuliaCall:
 install.packages("JuliaConnectoR")
+# or (development version)
+devtools::install_github("Non-Contradiction/JuliaCall")
 ```
 
 - The `juliaODEmodel` function generates Julia code for both the ODE model and event handling, ensuring that all the necessary components for solving the ODE system are included.

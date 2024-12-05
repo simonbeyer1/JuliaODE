@@ -1,12 +1,12 @@
 #' Generate Julia Code for ODE Models
 #'
 #' This function generates Julia code to solve ordinary differential equation (ODE) models
-#' \deqn{\displaystyle \frac{dx}{dt} = f(x, p)\,, \quad x(t = t_0) = x_0(p)\,,}
+#' \deqn{\displaystyle \dot{x} = f(x, p)\,, \quad x(t = t_0) = x_0(p)\,,}
 #' along with supporting functions for integration and Jacobian computation. The function
 #' automatically translates an equation list into Julia syntax and writes the resulting code
 #' to a file. It also creates an interface for solving ODEs and computing the Jacobian
-#' \deqn{\displaystyle \frac{\partial x}{\partial p}}
-#' from R using the JuliaConnectoR package.
+#' $ \partial x(t,p) /\partial p $
+#' from R using the JuliaCall package.
 #'
 #' @param odefunction A named list where names are the dynamic variables and values are the corresponding ODEs written as strings.
 #' @param modelname A character string specifying the name of the generated Julia model function. Default is `"odemodel"`.
@@ -103,9 +103,9 @@ juliaODEmodel <- function(odefunction, modelname = "odemodel", file = paste0(mod
   parameter_indices <- stats::setNames(seq_along(parameters), parameters)
 
   # ================================================================
-  # 5. Helper Function to Replace Symbols in Expressions
+  # 6. Generate Julia Code for ODE Equations
   # ================================================================
-  replace_symbols <- function(expr) {
+  eqncode <- lapply(odefunction, function(expr) {
     # Replace dynamic variables with u[index]
     for (x in dynvars) {
       expr <- gsub(paste0("\\b", x, "\\b"), paste0("u[", dynvars_indices[x], "]"), expr)
@@ -117,12 +117,7 @@ juliaODEmodel <- function(odefunction, modelname = "odemodel", file = paste0(mod
     # Replace 'time' and 't' with 't'
     expr <- gsub("\\b(time|t)\\b", "t", expr)
     return(expr)
-  }
-
-  # ================================================================
-  # 6. Generate Julia Code for ODE Equations
-  # ================================================================
-  eqncode <- lapply(odefunction, replace_symbols)
+  })
 
   # Combine the equations into the Julia ODE function
   odefuncode <- paste0(
@@ -182,9 +177,9 @@ juliaODEmodel <- function(odefunction, modelname = "odemodel", file = paste0(mod
       operation_code <- switch(
         method,
         add = paste0("integrator.u[", dynvars_indices[var], "] += ", value_replaced),
-        mult = paste0("integrator.u[", dynvars_indices[var], "] *= ", value_replaced),
-        rep = paste0("integrator.u[", dynvars_indices[var], "] = ", value_replaced),
-        stop(paste("Unsupported method:", method))
+        multiply = paste0("integrator.u[", dynvars_indices[var], "] *= ", value_replaced),
+        replace = paste0("integrator.u[", dynvars_indices[var], "] = ", value_replaced),
+        stop(paste("Unsupported event method:", method))
       )
 
       # Define the function that affects the system state
@@ -253,7 +248,7 @@ juliaODEmodel <- function(odefunction, modelname = "odemodel", file = paste0(mod
   # 9. Save and Execute Julia Code
   # ================================================================
   writeLines(julia_code, file)
-  JuliaConnectoR::juliaEval(julia_code)
+  JuliaCall::julia_source(file)
 
   # ================================================================
   # 10. Define the ODEmodel Object with Solution Methods
@@ -263,15 +258,25 @@ juliaODEmodel <- function(odefunction, modelname = "odemodel", file = paste0(mod
   # Function to solve ODEs without sensitivities
   ODEmodel$solve <- function(inits, dynpars, times, solver = "AutoTsit5(Rosenbrock32())", atol = 1e-8, rtol = 1e-6, maxsteps = 1e5) {
 
-    # Ensure that x0 and dynpars are in the correct order
+    # Ensure that inits and dynpars are in the correct order
     inits <- inits[dynvars]
     dynpars <- dynpars[parameters]
 
-    # Integrate in Julia
-    out <- JuliaConnectoR::juliaLet(
-      paste0("solve_", modelname,"([inits;dynpars], times, ", solver, "; callback = cbs, tstops = tstop_events, abstol = atol, reltol = rtol, maxiters = maxsteps)"),
-      inits = inits, dynpars = dynpars, times = times, atol = atol, rtol = rtol, maxsteps = maxsteps
-    )
+    # Assign arguments in Julia
+    JuliaCall::julia_assign("inits", inits)
+    JuliaCall::julia_assign("dynpars", dynpars)
+    JuliaCall::julia_assign("times", times)
+    JuliaCall::julia_assign("solver", solver)
+    JuliaCall::julia_assign("atol", atol)
+    JuliaCall::julia_assign("rtol", rtol)
+    JuliaCall::julia_assign("maxsteps", maxsteps)
+
+    # Solve
+    out <- JuliaCall::julia_eval(
+      paste0("solve_", modelname, "([inits; dynpars], times, ", solver, "; callback = cbs, tstops = tstop_events, abstol = atol, reltol = rtol, maxiters = maxsteps)")
+      )
+
+    # Return
     colnames(out) <- c("time", dynvars)
     return(out)
   }
@@ -279,20 +284,26 @@ juliaODEmodel <- function(odefunction, modelname = "odemodel", file = paste0(mod
   # Function to solve ODEs with sensitivities
   ODEmodel$senssolve <- function(inits, dynpars, times, solver = "AutoTsit5(Rosenbrock32())", atol = 1e-8, rtol = 1e-6, maxsteps = 1e5) {
 
-    # Ensure that x0 and dynpars are in the correct order
+    # Ensure that inits and dynpars are in the correct order
     inits <- inits[dynvars]
     dynpars <- dynpars[parameters]
 
+    # Assign arguments in Julia
+    JuliaCall::julia_assign("inits", inits)
+    JuliaCall::julia_assign("dynpars", dynpars)
+    JuliaCall::julia_assign("times", times)
+    JuliaCall::julia_assign("solver", solver)
+    JuliaCall::julia_assign("atol", atol)
+    JuliaCall::julia_assign("rtol", rtol)
+    JuliaCall::julia_assign("maxsteps", maxsteps)
+
     # Integration and Jacobian calculation in Julia
-    out <- JuliaConnectoR::juliaLet(
-      paste0("solvesens_", modelname,"([inits;dynpars], times, ", solver, "; callback = cbs, tstops = tstop_events, abstol = atol, reltol = rtol, maxiters = maxsteps)"),
-      inits = inits, dynpars = dynpars, times = times, atol = atol, rtol = rtol, maxsteps = maxsteps
-    )
+    out <- JuliaCall::julia_eval(
+      paste0("solvesens_", modelname,"([inits;dynpars], times, ", solver, "; callback = cbs, tstops = tstop_events, abstol = atol, reltol = rtol, maxiters = maxsteps)")
+      )
 
     # Generate column names for the Jacobian
-    param_names <- c(dynvars, parameters)
-    jac_colnames <- c("time",dynvars, as.vector(outer(dynvars, param_names, paste, sep = ".")))
-    colnames(out) <- jac_colnames
+    colnames(out) <- c("time",dynvars, as.vector(outer(dynvars, c(dynvars, parameters), paste, sep = ".")))
     return(out)
   }
 
@@ -309,7 +320,6 @@ juliaODEmodel <- function(odefunction, modelname = "odemodel", file = paste0(mod
 
   return(ODEmodel)
 }
-
 
 
 
@@ -334,28 +344,57 @@ juliaODEmodel <- function(odefunction, modelname = "odemodel", file = paste0(mod
 #'
 #' @export
 ensureJuliaPackages <- function() {
+  # Set up Julia environment
+  JuliaCall::julia_setup()
+
+  # Create a temporary Julia script file
+  temp_julia_script <- tempfile(fileext = ".jl")
+
+  # Ensure the temporary file is deleted when the function exits, even if an error occurs
+  on.exit({
+    if (file.exists(temp_julia_script)) {
+      file.remove(temp_julia_script)
+    }
+  }, add = TRUE)
+
+  # Write the Julia code to the temporary file
+  writeLines(
+    paste0(
+      "# © Rafael Arutjunjan\n",
+      "using Pkg\n",
+      "AddPkg(name::AbstractString) = name in keys(Pkg.project().dependencies) || Pkg.add(name)\n\n",
+      "macro secureload(Ex)\n",
+      "    @assert Ex.head === :using\n",
+      "    for ex in Ex.args\n",
+      "        AddPkg(string(ex.args[1]))\n",
+      "    end\n",
+      "    Ex\n",
+      "end"
+    ),
+    temp_julia_script
+  )
+
+  # Source the Julia script
+  JuliaCall::julia_source(temp_julia_script)
+
   # List of required Julia packages
   required_packages <- c("OrdinaryDiffEq", "ForwardDiff")
 
-  # Fetch the list of installed packages and extract names
-  installed_packages <- JuliaConnectoR::juliaEval("
-    [info.name for (uuid, info) in Pkg.installed()]
-  ")
-
   # Check and install missing packages
   for (pkg in required_packages) {
-    if (!(pkg %in% installed_packages)) {
-      packageStartupMessage(sprintf("Installing missing Julia package: %s", pkg))
-      JuliaConnectoR::juliaCall("Pkg.add", pkg)
-    }
+    packageStartupMessage(sprintf("Checking for Julia package: %s", pkg))
+    JuliaCall::julia_eval(sprintf("using Pkg; @secureload using %s", pkg))
   }
 }
 
+
 .onAttach <- function(libname, pkgname) {
   packageStartupMessage("Checking Julia dependencies...")
-  ensureJuliaPackages() # Call the function to ensure required Julia packages are installed.
+  ensureJuliaPackages() # Ensure required Julia packages are installed.
   packageStartupMessage("Julia dependencies are ready.")
 }
+
+
 
 
 
