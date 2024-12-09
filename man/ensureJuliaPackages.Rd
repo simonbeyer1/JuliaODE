@@ -2,27 +2,22 @@
 % Please edit documentation in R/JuliaODE.R
 \name{ensureJuliaPackages}
 \alias{ensureJuliaPackages}
-\title{.onAttach: Ensure Julia Dependencies on Package Load}
+\title{Ensure Required Julia Packages Are Installed}
 \usage{
 ensureJuliaPackages()
 }
-\arguments{
-\item{libname}{The library path to the package.}
-
-\item{pkgname}{The name of the package being attached.}
-}
 \description{
-This function is called automatically when the package is attached to the R session
-(e.g., using \code{library(yourpackage)}).
+This function checks for and installs any required Julia packages needed by the R package.
 }
 \details{
-The \code{.onAttach} function ensures that all required Julia dependencies are installed
-by calling \code{ensureJuliaPackages}. It provides startup messages to inform the user
-about the status of the installation.
+The function sets up the Julia environment using the \code{JuliaCall} package, writes a temporary
+Julia script with functions to manage package installation, and ensures that required Julia
+packages are available. If any package is missing, it will be installed automatically.
 }
 \note{
-Users do not need to call this function directly; it is executed automatically.
+This function is called internally by \code{.onAttach} and does not need to be called directly
+by the user.
 }
 \seealso{
-\code{\link{ensureJuliaPackages}}
+\code{\link{.onAttach}}
 }
